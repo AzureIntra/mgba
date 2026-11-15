@@ -647,6 +647,28 @@ declare namespace mGBA {
      */
     filePaths(): filePaths;
 
+    // PKLink memory export (pklink-pre.js)
+    /**
+     * Copies bytes of EWRAM (0x02000000-0x0203FFFF) or IWRAM (0x03000000-0x03007FFF) out of the
+     * loaded game. Call it from `videoFrameEndedCallback`, where the emulator thread waits.
+     *
+     * @param address - Bus address of the first byte, inside EWRAM or IWRAM.
+     * @param length - Byte count, 0 to 8192; the range stays wholly inside one of the two.
+     * @returns A copy of the bytes, not a view of the heap.
+     * @throws RangeError when the range leaves both, `length` is over 8192 or no game is loaded.
+     */
+    pklinkRead(address: number, length: number): Uint8Array;
+
+    /**
+     * Writes bytes into EWRAM (0x02000000-0x0203FFFF) of the loaded game, never IWRAM. Call it
+     * from `videoFrameEndedCallback`, where the emulator thread waits for the frame boundary.
+     *
+     * @param address - Bus address of the first byte, inside EWRAM.
+     * @param bytes - Up to 8192 bytes.
+     * @throws RangeError when the range leaves EWRAM, `bytes` is over 8192 or no game is loaded.
+     */
+    pklinkWrite(address: number, bytes: Uint8Array): void;
+
     // custom variables
     readonly version: {
       readonly projectName: string;

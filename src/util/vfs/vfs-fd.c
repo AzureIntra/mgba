@@ -270,9 +270,14 @@ static bool _vfdSync(struct VFile* vf, void* buffer, size_t size) {
 		}
 #endif
 	}
+	// PKLink: no fsync in the browser. There it waits, on the emulator thread, for the page to sync
+	// the whole IndexedDB mount: a busy IndexedDB stalls the game, and a quit, which joins this
+	// thread from the page, never returns. The page syncs the save itself.
+#ifndef __EMSCRIPTEN__
 	if (ret == 0) {
 		ret = fsync(vfd->fd);
 	}
+#endif
 #ifdef __EMSCRIPTEN__
 	EM_ASM(FS.syncfs(function (err) { assert(!err); }));
 #endif

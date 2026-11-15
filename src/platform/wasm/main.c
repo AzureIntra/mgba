@@ -28,6 +28,11 @@
 // global renderer
 static struct mEmscriptenRenderer* renderer = NULL;
 
+// PKLink: the loaded game's core, or NULL, for the memory export in pklink.c.
+struct mCore* pklinkGetCore(void) {
+	return renderer ? renderer->core : NULL;
+}
+
 typedef struct {
 	struct mLockstepThreadUser d;
 	int requestedId;
@@ -474,7 +479,8 @@ EMSCRIPTEN_KEEPALIVE bool loadState(int slot) {
 	bool result = false;
 	if (renderer->core && renderer->thread) {
 		mCoreThreadInterrupt(renderer->thread);
-		result = mCoreLoadState(renderer->core, slot, SAVESTATE_ALL);
+		// PKLink: as on desktop mGBA, a loaded state leaves the save file's newer in-game save alone.
+		result = mCoreLoadState(renderer->core, slot, SAVESTATE_ALL & ~SAVESTATE_SAVEDATA);
 		mCoreThreadContinue(renderer->thread);
 		return result;
 	}

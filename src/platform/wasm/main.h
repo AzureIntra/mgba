@@ -49,3 +49,6 @@ struct mEmscriptenRenderer {
 	bool restoreAutoSaveStateOnLoad;
 	bool autoSaveStateEnable;
 };
+
+// PKLink: the loaded game's core, or NULL (defined in main.c, used by pklink.c).
+struct mCore* pklinkGetCore(void);

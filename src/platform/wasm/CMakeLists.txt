@@ -2,7 +2,8 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
 	-O3 \
 	-s USE_SDL=2 \
 	-s INITIAL_MEMORY=256mb \
-	-s EXPORTED_RUNTIME_METHODS=[\"FS\",\"cwrap\",\"addFunction\",\"removeFunction\"] \
+	-s EXPORTED_RUNTIME_METHODS=[\"FS\",\"cwrap\",\"addFunction\",\"removeFunction\",\"HEAPU8\"] \
+	-s EXPORTED_FUNCTIONS=[\"_main\",\"_malloc\",\"_free\"] \
 	-s ALLOW_TABLE_GROWTH=1 \
 	-s ENVIRONMENT='web,worker' \
 	-s PTHREAD_POOL_SIZE=5 \
@@ -14,12 +15,13 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
 	-gsource-map \
 	--flto \
 	-pthread \
-	--pre-js ${CMAKE_CURRENT_SOURCE_DIR}/pre.js")
-add_executable(${BINARY_NAME}.js main.c memory.c ../sdl/sdl-audio.c ../sdl/sdl-events.c ../sdl/sdl-text.c)
+	--pre-js ${CMAKE_CURRENT_SOURCE_DIR}/pre.js \
+	--pre-js ${CMAKE_CURRENT_SOURCE_DIR}/pklink-pre.js")
+add_executable(${BINARY_NAME}.js main.c memory.c pklink.c pklink-tempo.c ../sdl/sdl-audio.c ../sdl/sdl-events.c ../sdl/sdl-text.c)
 set_target_properties(${BINARY_NAME}.js PROPERTIES
 	COMPILE_DEFINITIONS "${OS_DEFINES};${FEATURE_DEFINES};${FUNCTION_DEFINES}"
 	COMPILE_OPTIONS "-s;USE_SDL=2;-pthread"
-	LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/pre.js"
+	LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/pre.js;${CMAKE_CURRENT_SOURCE_DIR}/pklink-pre.js"
 	OUTPUT_NAME ${BINARY_NAME})
 target_link_libraries(${BINARY_NAME}.js ${BINARY_NAME} ${OS_LIB})
 

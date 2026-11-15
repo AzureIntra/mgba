@@ -8,6 +8,14 @@
 #include <mgba/core/core.h>
 #include <mgba/core/thread.h>
 
+#if defined(__EMSCRIPTEN__) && !SDL_VERSION_ATLEAST(3, 0, 0)
+// PKLink: fast-forward's sound at the game's own pitch (pklink-tempo.h).
+#include "platform/wasm/pklink-tempo.h"
+// PKLink: the faux clock (native speed over the target) under which the game fast-forwards. At its
+// own speed it is about 0.9955 (60 fps aimed for, 59.73 native); 2x fast-forward is about 0.4977.
+#define PKLINK_FAST_FORWARD_CLOCK 0.75
+#endif
+
 mLOG_DEFINE_CATEGORY(SDL_AUDIO, "SDL Audio", "platform.sdl.audio");
 
 #if SDL_VERSION_ATLEAST(3, 0, 0)
@@ -141,6 +149,19 @@ static void _mSDLAudioCallback(void* context, Uint8* data, int len) {
 		    audioContext->resampler.lowWaterMark + (audioContext->samples >> 6);
 		audioContext->sync->audioHighWater *= sampleRate / (fauxClock * audioContext->obtainedSpec.freq);
 	}
+
+#if defined(__EMSCRIPTEN__) && !SDL_VERSION_ATLEAST(3, 0, 0)
+	// PKLink: fast-forward's sound is stretched to the game's speed, not resampled up in pitch.
+	if (buffer && fauxClock < PKLINK_FAST_FORWARD_CLOCK && audioContext->obtainedSpec.channels == 2) {
+		pklinkFastForwardAudio(buffer, sampleRate, 1 / fauxClock, audioContext->obtainedSpec.freq, (int16_t*) data,
+		                       len / (2 * audioContext->obtainedSpec.channels));
+		if (audioContext->sync) {
+			mCoreSyncConsumeAudio(audioContext->sync);
+		}
+		return;
+	}
+	pklinkNormalSpeedAudio();
+#endif
 
 	mAudioResamplerSetSource(&audioContext->resampler, buffer, sampleRate / fauxClock, true);
 	mAudioResamplerProcess(&audioContext->resampler);
